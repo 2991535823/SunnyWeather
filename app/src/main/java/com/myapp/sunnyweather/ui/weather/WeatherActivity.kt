@@ -1,12 +1,17 @@
 package com.myapp.sunnyweather.ui.weather
 
+import android.content.Context
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.myapp.sunnyweather.R
@@ -41,6 +46,29 @@ val viewModel by lazy { ViewModelProviders.of(this).get(WeatherViewModel::class.
         if (viewModel.placeName.isEmpty()){
             viewModel.placeName=intent.getStringExtra("place_name")?:""
         }
+        viewModel.refreshWeather(viewModel.locationLng,viewModel.locationLat)
+        navBtn.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
+        }
+        drawerLayout.addDrawerListener(object :DrawerLayout.DrawerListener{
+            override fun onDrawerStateChanged(newState: Int) {
+
+            }
+
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                val manager=getSystemService(Context.INPUT_METHOD_SERVICE)as InputMethodManager
+                manager.hideSoftInputFromWindow(drawerView.windowToken,InputMethodManager.HIDE_NOT_ALWAYS)
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+
+            }
+
+        })
         viewModel.weatherLiveData.observe(this, Observer { result->
             val weather=result.getOrNull()
             if (weather!=null){
@@ -49,8 +77,21 @@ val viewModel by lazy { ViewModelProviders.of(this).get(WeatherViewModel::class.
                 "无法获取天气QWQ".showToast()
                 result.exceptionOrNull()?.printStackTrace()
             }
+            swipeRefresh.isRefreshing=false
         })
+        swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
+
+    }
+     fun refreshWeather(){
         viewModel.refreshWeather(viewModel.locationLng,viewModel.locationLat)
+        swipeRefresh.isRefreshing=true
+    }
+
+    override fun onResume() {
+        super.onResume()
+
     }
     private fun showWeather(weather: Weather){
         placeName.text=viewModel.placeName
